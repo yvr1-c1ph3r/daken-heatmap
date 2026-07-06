@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KEYS Heatmap</title>
 <style>
   body { font-family: Inter, -apple-system, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif;
@@ -9,412 +10,204 @@
          display: flex; justify-content: center; }
   .card { background: #fff; border: 1px solid #e3e8ee; border-radius: 12px;
           padding: 20px 24px; box-shadow: 0 1px 4px rgba(51,89,123,.06); display: inline-block; }
-  .head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+
+  /* ---- page 1: input ---- */
+  #inputPage .card { width: 420px; }
+  .title { font-size: 15px; font-weight: 700; letter-spacing: .06em; color: #33597b; margin-bottom: 16px; }
+  .drop { border: 1.5px dashed #c9d7e4; border-radius: 10px; padding: 26px 16px; text-align: center;
+          color: #8b98a5; font-size: 12.5px; cursor: pointer; transition: .15s; }
+  .drop:hover, .drop.over { border-color: #5d87a6; background: #f4f8fb; color: #5d87a6; }
+  .drop b { color: #5d87a6; }
+  .or { display: flex; align-items: center; gap: 10px; margin: 16px 0 12px; color: #b6c1cb; font-size: 11px; letter-spacing: .15em; }
+  .or::before, .or::after { content: ""; flex: 1; height: 1px; background: #e3e8ee; }
+  .note { font-size: 11.5px; color: #8b98a5; margin-bottom: 6px; }
+  .note a { color: #5d87a6; font-weight: 600; }
+  textarea { width: 100%; box-sizing: border-box; height: 110px; border: 1px solid #e3e8ee; border-radius: 8px;
+             padding: 10px; font-size: 11.5px; font-family: ui-monospace, Consolas, monospace; color: #2c3a47;
+             resize: vertical; outline: none; }
+  textarea:focus { border-color: #93b1c7; }
+  button.go { width: 100%; margin-top: 12px; padding: 10px; border: none; border-radius: 8px;
+              background: #33597b; color: #fff; font-size: 13px; font-weight: 600; letter-spacing: .08em;
+              cursor: pointer; transition: .15s; }
+  button.go:hover { background: #2a4a67; }
+  .err { color: #c0574f; font-size: 11.5px; margin-top: 8px; display: none; }
+
+  /* ---- page 2: heatmap ---- */
+  #heatmapPage { display: none; }
+  .head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; gap: 24px; }
   .total { font-size: 26px; font-weight: 700; letter-spacing: .02em; color: #33597b; }
   .total small { font-size: 12px; font-weight: 600; color: #8b98a5; margin-left: 6px; letter-spacing: .12em; }
   .meta { font-size: 11.5px; color: #8b98a5; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
   .meta b { color: #5d87a6; font-weight: 600; }
-  .foot { display: flex; justify-content: flex-end; align-items: center; gap: 5px;
-          margin-top: 6px; font-size: 11px; color: #8b98a5; }
+  .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: #8b98a5; }
+  .legend { display: flex; align-items: center; gap: 5px; }
   .sq { width: 11px; height: 11px; border-radius: 2.5px; display: inline-block; }
+  .back { color: #b6c1cb; cursor: pointer; letter-spacing: .05em; }
+  .back:hover { color: #5d87a6; }
 </style>
 </head>
 <body>
-<div class="card">
-  <div class="head">
-    <div class="total">6,967,759<small>KEYS</small></div>
-    <div class="meta">2025.09.17 — 2026.07.05&ensp;/&ensp;<b>174</b> days</div>
+
+<!-- ============ PAGE 1 : CSV input ============ -->
+<div id="inputPage">
+  <div class="card">
+    <div class="title">KEYS HEATMAP</div>
+
+    <div class="drop" id="dropZone">
+      <b>CSVファイルを選択</b> またはここにドラッグ＆ドロップ
+      <input type="file" id="fileInput" accept=".csv,text/csv" hidden>
+    </div>
+
+    <div class="or">OR</div>
+
+    <div class="note">CSVダウンロードは<a href="https://p.eagate.573.jp/game/2dx/33/djdata/score_download.html" target="_blank" rel="noopener">こちら</a>から</div>
+    <textarea id="pasteArea" placeholder="プレー日,鍵盤,スクラッチ&#10;2026/07/05,60568,3427&#10;…をそのまま貼り付け"></textarea>
+    <button class="go" id="goBtn">ヒートマップを表示</button>
+    <div class="err" id="errMsg"></div>
   </div>
-  <svg width="784" height="124" viewBox="0 0 784 124" xmlns="http://www.w3.org/2000/svg" font-family="Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="10">
-<text x="32" y="12" fill="#8b98a5">Jun</text>
-<text x="46" y="12" fill="#8b98a5">Jul</text>
-<text x="102" y="12" fill="#8b98a5">Aug</text>
-<text x="158" y="12" fill="#8b98a5">Sep</text>
-<text x="228" y="12" fill="#8b98a5">Oct</text>
-<text x="284" y="12" fill="#8b98a5">Nov</text>
-<text x="340" y="12" fill="#8b98a5">Dec</text>
-<text x="410" y="12" fill="#8b98a5">Jan</text>
-<text x="466" y="12" fill="#8b98a5">Feb</text>
-<text x="522" y="12" fill="#8b98a5">Mar</text>
-<text x="592" y="12" fill="#8b98a5">Apr</text>
-<text x="648" y="12" fill="#8b98a5">May</text>
-<text x="704" y="12" fill="#8b98a5">Jun</text>
-<text x="27" y="29" text-anchor="end" fill="#8b98a5">Mon</text>
-<text x="27" y="57" text-anchor="end" fill="#8b98a5">Wed</text>
-<text x="27" y="85" text-anchor="end" fill="#8b98a5">Fri</text>
-<rect x="32" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/06/30 (月) 鍵盤: 0</title></rect>
-<rect x="32" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/01 (火) 鍵盤: 0</title></rect>
-<rect x="32" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/02 (水) 鍵盤: 0</title></rect>
-<rect x="32" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/03 (木) 鍵盤: 0</title></rect>
-<rect x="32" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/04 (金) 鍵盤: 0</title></rect>
-<rect x="32" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/05 (土) 鍵盤: 0</title></rect>
-<rect x="32" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/06 (日) 鍵盤: 0</title></rect>
-<rect x="46" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/07 (月) 鍵盤: 0</title></rect>
-<rect x="46" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/08 (火) 鍵盤: 0</title></rect>
-<rect x="46" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/09 (水) 鍵盤: 0</title></rect>
-<rect x="46" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/10 (木) 鍵盤: 0</title></rect>
-<rect x="46" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/11 (金) 鍵盤: 0</title></rect>
-<rect x="46" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/12 (土) 鍵盤: 0</title></rect>
-<rect x="46" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/13 (日) 鍵盤: 0</title></rect>
-<rect x="60" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/14 (月) 鍵盤: 0</title></rect>
-<rect x="60" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/15 (火) 鍵盤: 0</title></rect>
-<rect x="60" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/16 (水) 鍵盤: 0</title></rect>
-<rect x="60" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/17 (木) 鍵盤: 0</title></rect>
-<rect x="60" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/18 (金) 鍵盤: 0</title></rect>
-<rect x="60" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/19 (土) 鍵盤: 0</title></rect>
-<rect x="60" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/20 (日) 鍵盤: 0</title></rect>
-<rect x="74" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/21 (月) 鍵盤: 0</title></rect>
-<rect x="74" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/22 (火) 鍵盤: 0</title></rect>
-<rect x="74" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/23 (水) 鍵盤: 0</title></rect>
-<rect x="74" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/24 (木) 鍵盤: 0</title></rect>
-<rect x="74" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/25 (金) 鍵盤: 0</title></rect>
-<rect x="74" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/26 (土) 鍵盤: 0</title></rect>
-<rect x="74" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/27 (日) 鍵盤: 0</title></rect>
-<rect x="88" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/28 (月) 鍵盤: 0</title></rect>
-<rect x="88" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/29 (火) 鍵盤: 0</title></rect>
-<rect x="88" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/30 (水) 鍵盤: 0</title></rect>
-<rect x="88" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/07/31 (木) 鍵盤: 0</title></rect>
-<rect x="88" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/01 (金) 鍵盤: 0</title></rect>
-<rect x="88" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/02 (土) 鍵盤: 0</title></rect>
-<rect x="88" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/03 (日) 鍵盤: 0</title></rect>
-<rect x="102" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/04 (月) 鍵盤: 0</title></rect>
-<rect x="102" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/05 (火) 鍵盤: 0</title></rect>
-<rect x="102" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/06 (水) 鍵盤: 0</title></rect>
-<rect x="102" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/07 (木) 鍵盤: 0</title></rect>
-<rect x="102" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/08 (金) 鍵盤: 0</title></rect>
-<rect x="102" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/09 (土) 鍵盤: 0</title></rect>
-<rect x="102" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/10 (日) 鍵盤: 0</title></rect>
-<rect x="116" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/11 (月) 鍵盤: 0</title></rect>
-<rect x="116" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/12 (火) 鍵盤: 0</title></rect>
-<rect x="116" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/13 (水) 鍵盤: 0</title></rect>
-<rect x="116" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/14 (木) 鍵盤: 0</title></rect>
-<rect x="116" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/15 (金) 鍵盤: 0</title></rect>
-<rect x="116" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/16 (土) 鍵盤: 0</title></rect>
-<rect x="116" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/17 (日) 鍵盤: 0</title></rect>
-<rect x="130" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/18 (月) 鍵盤: 0</title></rect>
-<rect x="130" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/19 (火) 鍵盤: 0</title></rect>
-<rect x="130" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/20 (水) 鍵盤: 0</title></rect>
-<rect x="130" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/21 (木) 鍵盤: 0</title></rect>
-<rect x="130" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/22 (金) 鍵盤: 0</title></rect>
-<rect x="130" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/23 (土) 鍵盤: 0</title></rect>
-<rect x="130" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/24 (日) 鍵盤: 0</title></rect>
-<rect x="144" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/25 (月) 鍵盤: 0</title></rect>
-<rect x="144" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/26 (火) 鍵盤: 0</title></rect>
-<rect x="144" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/27 (水) 鍵盤: 0</title></rect>
-<rect x="144" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/28 (木) 鍵盤: 0</title></rect>
-<rect x="144" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/29 (金) 鍵盤: 0</title></rect>
-<rect x="144" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/30 (土) 鍵盤: 0</title></rect>
-<rect x="144" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/08/31 (日) 鍵盤: 0</title></rect>
-<rect x="158" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/01 (月) 鍵盤: 0</title></rect>
-<rect x="158" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/02 (火) 鍵盤: 0</title></rect>
-<rect x="158" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/03 (水) 鍵盤: 0</title></rect>
-<rect x="158" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/04 (木) 鍵盤: 0</title></rect>
-<rect x="158" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/05 (金) 鍵盤: 0</title></rect>
-<rect x="158" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/06 (土) 鍵盤: 0</title></rect>
-<rect x="158" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/07 (日) 鍵盤: 0</title></rect>
-<rect x="172" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/08 (月) 鍵盤: 0</title></rect>
-<rect x="172" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/09 (火) 鍵盤: 0</title></rect>
-<rect x="172" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/10 (水) 鍵盤: 0</title></rect>
-<rect x="172" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/11 (木) 鍵盤: 0</title></rect>
-<rect x="172" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/12 (金) 鍵盤: 0</title></rect>
-<rect x="172" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/13 (土) 鍵盤: 0</title></rect>
-<rect x="172" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/14 (日) 鍵盤: 0</title></rect>
-<rect x="186" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/15 (月) 鍵盤: 0</title></rect>
-<rect x="186" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/16 (火) 鍵盤: 0</title></rect>
-<rect x="186" y="48" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/09/17 (水) 鍵盤: 15,822</title></rect>
-<rect x="186" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/09/18 (木) 鍵盤: 4,233</title></rect>
-<rect x="186" y="76" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/09/19 (金) 鍵盤: 107,238</title></rect>
-<rect x="186" y="90" width="11" height="11" rx="2.5" fill="#5d87a6"><title>2025/09/20 (土) 鍵盤: 58,431</title></rect>
-<rect x="186" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/21 (日) 鍵盤: 0</title></rect>
-<rect x="200" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/22 (月) 鍵盤: 0</title></rect>
-<rect x="200" y="34" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/09/23 (火) 鍵盤: 75,518</title></rect>
-<rect x="200" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/24 (水) 鍵盤: 0</title></rect>
-<rect x="200" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/09/25 (木) 鍵盤: 19,279</title></rect>
-<rect x="200" y="76" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/09/26 (金) 鍵盤: 20,547</title></rect>
-<rect x="200" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/27 (土) 鍵盤: 0</title></rect>
-<rect x="200" y="104" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/09/28 (日) 鍵盤: 98,003</title></rect>
-<rect x="214" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/09/29 (月) 鍵盤: 0</title></rect>
-<rect x="214" y="34" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/09/30 (火) 鍵盤: 20,172</title></rect>
-<rect x="214" y="48" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/10/01 (水) 鍵盤: 18,371</title></rect>
-<rect x="214" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/10/02 (木) 鍵盤: 17,131</title></rect>
-<rect x="214" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/10/03 (金) 鍵盤: 0</title></rect>
-<rect x="214" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/10/04 (土) 鍵盤: 74,443</title></rect>
-<rect x="214" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/10/05 (日) 鍵盤: 0</title></rect>
-<rect x="228" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/10/06 (月) 鍵盤: 0</title></rect>
-<rect x="228" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/10/07 (火) 鍵盤: 18,491</title></rect>
-<rect x="228" y="48" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/10/08 (水) 鍵盤: 18,519</title></rect>
-<rect x="228" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/10/09 (木) 鍵盤: 16,688</title></rect>
-<rect x="228" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/10/10 (金) 鍵盤: 0</title></rect>
-<rect x="228" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/10/11 (土) 鍵盤: 99,518</title></rect>
-<rect x="228" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/10/12 (日) 鍵盤: 0</title></rect>
-<rect x="242" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/10/13 (月) 鍵盤: 0</title></rect>
-<rect x="242" y="34" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/10/14 (火) 鍵盤: 20,228</title></rect>
-<rect x="242" y="48" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/10/15 (水) 鍵盤: 16,259</title></rect>
-<rect x="242" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/10/16 (木) 鍵盤: 21,096</title></rect>
-<rect x="242" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/10/17 (金) 鍵盤: 0</title></rect>
-<rect x="242" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/10/18 (土) 鍵盤: 105,116</title></rect>
-<rect x="242" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/10/19 (日) 鍵盤: 0</title></rect>
-<rect x="256" y="20" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/10/20 (月) 鍵盤: 16,691</title></rect>
-<rect x="256" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/10/21 (火) 鍵盤: 17,493</title></rect>
-<rect x="256" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/10/22 (水) 鍵盤: 0</title></rect>
-<rect x="256" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/10/23 (木) 鍵盤: 18,788</title></rect>
-<rect x="256" y="76" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/10/24 (金) 鍵盤: 16,365</title></rect>
-<rect x="256" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/10/25 (土) 鍵盤: 76,683</title></rect>
-<rect x="256" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/10/26 (日) 鍵盤: 0</title></rect>
-<rect x="270" y="20" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/10/27 (月) 鍵盤: 18,284</title></rect>
-<rect x="270" y="34" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/10/28 (火) 鍵盤: 21,673</title></rect>
-<rect x="270" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/10/29 (水) 鍵盤: 0</title></rect>
-<rect x="270" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/10/30 (木) 鍵盤: 22,376</title></rect>
-<rect x="270" y="76" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/10/31 (金) 鍵盤: 22,965</title></rect>
-<rect x="270" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/11/01 (土) 鍵盤: 99,610</title></rect>
-<rect x="270" y="104" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/11/02 (日) 鍵盤: 6,727</title></rect>
-<rect x="284" y="20" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/11/03 (月) 鍵盤: 92,760</title></rect>
-<rect x="284" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/11/04 (火) 鍵盤: 0</title></rect>
-<rect x="284" y="48" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/11/05 (水) 鍵盤: 21,313</title></rect>
-<rect x="284" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/11/06 (木) 鍵盤: 0</title></rect>
-<rect x="284" y="76" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/11/07 (金) 鍵盤: 17,442</title></rect>
-<rect x="284" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/11/08 (土) 鍵盤: 92,249</title></rect>
-<rect x="284" y="104" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/11/09 (日) 鍵盤: 66,448</title></rect>
-<rect x="298" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/11/10 (月) 鍵盤: 0</title></rect>
-<rect x="298" y="34" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/11/11 (火) 鍵盤: 22,313</title></rect>
-<rect x="298" y="48" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/11/12 (水) 鍵盤: 22,112</title></rect>
-<rect x="298" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/11/13 (木) 鍵盤: 19,658</title></rect>
-<rect x="298" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/11/14 (金) 鍵盤: 0</title></rect>
-<rect x="298" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/11/15 (土) 鍵盤: 113,704</title></rect>
-<rect x="298" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/11/16 (日) 鍵盤: 0</title></rect>
-<rect x="312" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/11/17 (月) 鍵盤: 0</title></rect>
-<rect x="312" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/11/18 (火) 鍵盤: 14,842</title></rect>
-<rect x="312" y="48" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/11/19 (水) 鍵盤: 19,524</title></rect>
-<rect x="312" y="62" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/11/20 (木) 鍵盤: 85,700</title></rect>
-<rect x="312" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/11/21 (金) 鍵盤: 0</title></rect>
-<rect x="312" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/11/22 (土) 鍵盤: 77,494</title></rect>
-<rect x="312" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/11/23 (日) 鍵盤: 0</title></rect>
-<rect x="326" y="20" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/11/24 (月) 鍵盤: 101,499</title></rect>
-<rect x="326" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/11/25 (火) 鍵盤: 0</title></rect>
-<rect x="326" y="48" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/11/26 (水) 鍵盤: 19,690</title></rect>
-<rect x="326" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/11/27 (木) 鍵盤: 16,177</title></rect>
-<rect x="326" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/11/28 (金) 鍵盤: 0</title></rect>
-<rect x="326" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/11/29 (土) 鍵盤: 67,073</title></rect>
-<rect x="326" y="104" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/11/30 (日) 鍵盤: 67,476</title></rect>
-<rect x="340" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/12/01 (月) 鍵盤: 0</title></rect>
-<rect x="340" y="34" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/12/02 (火) 鍵盤: 24,920</title></rect>
-<rect x="340" y="48" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/12/03 (水) 鍵盤: 18,804</title></rect>
-<rect x="340" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/12/04 (木) 鍵盤: 21,107</title></rect>
-<rect x="340" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/12/05 (金) 鍵盤: 0</title></rect>
-<rect x="340" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/12/06 (土) 鍵盤: 86,977</title></rect>
-<rect x="340" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/12/07 (日) 鍵盤: 0</title></rect>
-<rect x="354" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/12/08 (月) 鍵盤: 0</title></rect>
-<rect x="354" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/12/09 (火) 鍵盤: 16,310</title></rect>
-<rect x="354" y="48" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/12/10 (水) 鍵盤: 19,995</title></rect>
-<rect x="354" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/12/11 (木) 鍵盤: 16,423</title></rect>
-<rect x="354" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/12/12 (金) 鍵盤: 0</title></rect>
-<rect x="354" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/12/13 (土) 鍵盤: 63,048</title></rect>
-<rect x="354" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/12/14 (日) 鍵盤: 0</title></rect>
-<rect x="368" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/12/15 (月) 鍵盤: 0</title></rect>
-<rect x="368" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/12/16 (火) 鍵盤: 17,802</title></rect>
-<rect x="368" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/12/17 (水) 鍵盤: 0</title></rect>
-<rect x="368" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/12/18 (木) 鍵盤: 18,347</title></rect>
-<rect x="368" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/12/19 (金) 鍵盤: 0</title></rect>
-<rect x="368" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/12/20 (土) 鍵盤: 99,291</title></rect>
-<rect x="368" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/12/21 (日) 鍵盤: 0</title></rect>
-<rect x="382" y="20" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/12/22 (月) 鍵盤: 22,200</title></rect>
-<rect x="382" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2025/12/23 (火) 鍵盤: 18,933</title></rect>
-<rect x="382" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/12/24 (水) 鍵盤: 0</title></rect>
-<rect x="382" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/12/25 (木) 鍵盤: 21,365</title></rect>
-<rect x="382" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/12/26 (金) 鍵盤: 0</title></rect>
-<rect x="382" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/12/27 (土) 鍵盤: 64,932</title></rect>
-<rect x="382" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/12/28 (日) 鍵盤: 0</title></rect>
-<rect x="396" y="20" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2025/12/29 (月) 鍵盤: 21,140</title></rect>
-<rect x="396" y="34" width="11" height="11" rx="2.5" fill="#33597b"><title>2025/12/30 (火) 鍵盤: 96,248</title></rect>
-<rect x="396" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2025/12/31 (水) 鍵盤: 0</title></rect>
-<rect x="396" y="62" width="11" height="11" rx="2.5" fill="#5d87a6"><title>2026/01/01 (木) 鍵盤: 55,128</title></rect>
-<rect x="396" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/01/02 (金) 鍵盤: 0</title></rect>
-<rect x="396" y="90" width="11" height="11" rx="2.5" fill="#5d87a6"><title>2026/01/03 (土) 鍵盤: 51,763</title></rect>
-<rect x="396" y="104" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/01/04 (日) 鍵盤: 15,268</title></rect>
-<rect x="410" y="20" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/01/05 (月) 鍵盤: 17,864</title></rect>
-<rect x="410" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/01/06 (火) 鍵盤: 11,104</title></rect>
-<rect x="410" y="48" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/01/07 (水) 鍵盤: 14,932</title></rect>
-<rect x="410" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/01/08 (木) 鍵盤: 16,220</title></rect>
-<rect x="410" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/01/09 (金) 鍵盤: 0</title></rect>
-<rect x="410" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/01/10 (土) 鍵盤: 73,661</title></rect>
-<rect x="410" y="104" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/01/11 (日) 鍵盤: 66,801</title></rect>
-<rect x="424" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/01/12 (月) 鍵盤: 0</title></rect>
-<rect x="424" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/01/13 (火) 鍵盤: 17,139</title></rect>
-<rect x="424" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/01/14 (水) 鍵盤: 0</title></rect>
-<rect x="424" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/01/15 (木) 鍵盤: 15,548</title></rect>
-<rect x="424" y="76" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/01/16 (金) 鍵盤: 110,198</title></rect>
-<rect x="424" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/01/17 (土) 鍵盤: 0</title></rect>
-<rect x="424" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/01/18 (日) 鍵盤: 0</title></rect>
-<rect x="438" y="20" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/01/19 (月) 鍵盤: 22,801</title></rect>
-<rect x="438" y="34" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/01/20 (火) 鍵盤: 24,484</title></rect>
-<rect x="438" y="48" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/01/21 (水) 鍵盤: 38,082</title></rect>
-<rect x="438" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/01/22 (木) 鍵盤: 36,825</title></rect>
-<rect x="438" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/01/23 (金) 鍵盤: 0</title></rect>
-<rect x="438" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/01/24 (土) 鍵盤: 111,113</title></rect>
-<rect x="438" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/01/25 (日) 鍵盤: 0</title></rect>
-<rect x="452" y="20" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/01/26 (月) 鍵盤: 15,284</title></rect>
-<rect x="452" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/01/27 (火) 鍵盤: 16,896</title></rect>
-<rect x="452" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/01/28 (水) 鍵盤: 0</title></rect>
-<rect x="452" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/01/29 (木) 鍵盤: 18,104</title></rect>
-<rect x="452" y="76" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/01/30 (金) 鍵盤: 15,217</title></rect>
-<rect x="452" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/01/31 (土) 鍵盤: 0</title></rect>
-<rect x="452" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/02/01 (日) 鍵盤: 0</title></rect>
-<rect x="466" y="20" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/02/02 (月) 鍵盤: 19,910</title></rect>
-<rect x="466" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/02/03 (火) 鍵盤: 17,296</title></rect>
-<rect x="466" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/02/04 (水) 鍵盤: 0</title></rect>
-<rect x="466" y="62" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/02/05 (木) 鍵盤: 66,419</title></rect>
-<rect x="466" y="76" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/02/06 (金) 鍵盤: 25,500</title></rect>
-<rect x="466" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/02/07 (土) 鍵盤: 0</title></rect>
-<rect x="466" y="104" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/02/08 (日) 鍵盤: 32,977</title></rect>
-<rect x="480" y="20" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/02/09 (月) 鍵盤: 20,202</title></rect>
-<rect x="480" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/02/10 (火) 鍵盤: 0</title></rect>
-<rect x="480" y="48" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/02/11 (水) 鍵盤: 70,161</title></rect>
-<rect x="480" y="62" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/02/12 (木) 鍵盤: 77,309</title></rect>
-<rect x="480" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/02/13 (金) 鍵盤: 0</title></rect>
-<rect x="480" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/02/14 (土) 鍵盤: 83,430</title></rect>
-<rect x="480" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/02/15 (日) 鍵盤: 0</title></rect>
-<rect x="494" y="20" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/02/16 (月) 鍵盤: 18,093</title></rect>
-<rect x="494" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/02/17 (火) 鍵盤: 19,704</title></rect>
-<rect x="494" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/02/18 (水) 鍵盤: 0</title></rect>
-<rect x="494" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/02/19 (木) 鍵盤: 24,300</title></rect>
-<rect x="494" y="76" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/02/20 (金) 鍵盤: 17,914</title></rect>
-<rect x="494" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/02/21 (土) 鍵盤: 121,129</title></rect>
-<rect x="494" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/02/22 (日) 鍵盤: 0</title></rect>
-<rect x="508" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/02/23 (月) 鍵盤: 0</title></rect>
-<rect x="508" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/02/24 (火) 鍵盤: 19,075</title></rect>
-<rect x="508" y="48" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/02/25 (水) 鍵盤: 23,388</title></rect>
-<rect x="508" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/02/26 (木) 鍵盤: 0</title></rect>
-<rect x="508" y="76" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/02/27 (金) 鍵盤: 18,623</title></rect>
-<rect x="508" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/02/28 (土) 鍵盤: 108,453</title></rect>
-<rect x="508" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/01 (日) 鍵盤: 0</title></rect>
-<rect x="522" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/02 (月) 鍵盤: 0</title></rect>
-<rect x="522" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/03/03 (火) 鍵盤: 19,233</title></rect>
-<rect x="522" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/04 (水) 鍵盤: 0</title></rect>
-<rect x="522" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/03/05 (木) 鍵盤: 21,132</title></rect>
-<rect x="522" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/06 (金) 鍵盤: 0</title></rect>
-<rect x="522" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/03/07 (土) 鍵盤: 89,447</title></rect>
-<rect x="522" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/08 (日) 鍵盤: 0</title></rect>
-<rect x="536" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/09 (月) 鍵盤: 0</title></rect>
-<rect x="536" y="34" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/03/10 (火) 鍵盤: 21,081</title></rect>
-<rect x="536" y="48" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/03/11 (水) 鍵盤: 18,587</title></rect>
-<rect x="536" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/03/12 (木) 鍵盤: 20,552</title></rect>
-<rect x="536" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/13 (金) 鍵盤: 0</title></rect>
-<rect x="536" y="90" width="11" height="11" rx="2.5" fill="#5d87a6"><title>2026/03/14 (土) 鍵盤: 49,025</title></rect>
-<rect x="536" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/15 (日) 鍵盤: 0</title></rect>
-<rect x="550" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/16 (月) 鍵盤: 0</title></rect>
-<rect x="550" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/03/17 (火) 鍵盤: 19,009</title></rect>
-<rect x="550" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/18 (水) 鍵盤: 0</title></rect>
-<rect x="550" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/03/19 (木) 鍵盤: 21,423</title></rect>
-<rect x="550" y="76" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/03/20 (金) 鍵盤: 78,375</title></rect>
-<rect x="550" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/21 (土) 鍵盤: 0</title></rect>
-<rect x="550" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/22 (日) 鍵盤: 0</title></rect>
-<rect x="564" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/23 (月) 鍵盤: 0</title></rect>
-<rect x="564" y="34" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/03/24 (火) 鍵盤: 20,902</title></rect>
-<rect x="564" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/25 (水) 鍵盤: 0</title></rect>
-<rect x="564" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/03/26 (木) 鍵盤: 17,100</title></rect>
-<rect x="564" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/27 (金) 鍵盤: 0</title></rect>
-<rect x="564" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/03/28 (土) 鍵盤: 72,943</title></rect>
-<rect x="564" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/29 (日) 鍵盤: 0</title></rect>
-<rect x="578" y="20" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/03/30 (月) 鍵盤: 18,593</title></rect>
-<rect x="578" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/03/31 (火) 鍵盤: 0</title></rect>
-<rect x="578" y="48" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/04/01 (水) 鍵盤: 19,369</title></rect>
-<rect x="578" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/04/02 (木) 鍵盤: 16,146</title></rect>
-<rect x="578" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/04/03 (金) 鍵盤: 0</title></rect>
-<rect x="578" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/04/04 (土) 鍵盤: 103,652</title></rect>
-<rect x="578" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/04/05 (日) 鍵盤: 0</title></rect>
-<rect x="592" y="20" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/04/06 (月) 鍵盤: 21,494</title></rect>
-<rect x="592" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/04/07 (火) 鍵盤: 0</title></rect>
-<rect x="592" y="48" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/04/08 (水) 鍵盤: 17,183</title></rect>
-<rect x="592" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/04/09 (木) 鍵盤: 15,875</title></rect>
-<rect x="592" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/04/10 (金) 鍵盤: 0</title></rect>
-<rect x="592" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/04/11 (土) 鍵盤: 71,756</title></rect>
-<rect x="592" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/04/12 (日) 鍵盤: 0</title></rect>
-<rect x="606" y="20" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/04/13 (月) 鍵盤: 19,016</title></rect>
-<rect x="606" y="34" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/04/14 (火) 鍵盤: 21,677</title></rect>
-<rect x="606" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/04/15 (水) 鍵盤: 0</title></rect>
-<rect x="606" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/04/16 (木) 鍵盤: 26,564</title></rect>
-<rect x="606" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/04/17 (金) 鍵盤: 0</title></rect>
-<rect x="606" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/04/18 (土) 鍵盤: 107,795</title></rect>
-<rect x="606" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/04/19 (日) 鍵盤: 0</title></rect>
-<rect x="620" y="20" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/04/20 (月) 鍵盤: 19,521</title></rect>
-<rect x="620" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/04/21 (火) 鍵盤: 19,557</title></rect>
-<rect x="620" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/04/22 (水) 鍵盤: 0</title></rect>
-<rect x="620" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/04/23 (木) 鍵盤: 0</title></rect>
-<rect x="620" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/04/24 (金) 鍵盤: 0</title></rect>
-<rect x="620" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/04/25 (土) 鍵盤: 87,257</title></rect>
-<rect x="620" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/04/26 (日) 鍵盤: 0</title></rect>
-<rect x="634" y="20" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/04/27 (月) 鍵盤: 21,735</title></rect>
-<rect x="634" y="34" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/04/28 (火) 鍵盤: 21,854</title></rect>
-<rect x="634" y="48" width="11" height="11" rx="2.5" fill="#5d87a6"><title>2026/04/29 (水) 鍵盤: 45,673</title></rect>
-<rect x="634" y="62" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/04/30 (木) 鍵盤: 17,953</title></rect>
-<rect x="634" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/05/01 (金) 鍵盤: 0</title></rect>
-<rect x="634" y="90" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/05/02 (土) 鍵盤: 7,984</title></rect>
-<rect x="634" y="104" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/05/03 (日) 鍵盤: 19,705</title></rect>
-<rect x="648" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/05/04 (月) 鍵盤: 0</title></rect>
-<rect x="648" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/05/05 (火) 鍵盤: 0</title></rect>
-<rect x="648" y="48" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/05/06 (水) 鍵盤: 94,223</title></rect>
-<rect x="648" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/05/07 (木) 鍵盤: 22,967</title></rect>
-<rect x="648" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/05/08 (金) 鍵盤: 0</title></rect>
-<rect x="648" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/05/09 (土) 鍵盤: 87,197</title></rect>
-<rect x="648" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/05/10 (日) 鍵盤: 0</title></rect>
-<rect x="662" y="20" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/05/11 (月) 鍵盤: 21,388</title></rect>
-<rect x="662" y="34" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/05/12 (火) 鍵盤: 20,667</title></rect>
-<rect x="662" y="48" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/05/13 (水) 鍵盤: 19,172</title></rect>
-<rect x="662" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/05/14 (木) 鍵盤: 0</title></rect>
-<rect x="662" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/05/15 (金) 鍵盤: 0</title></rect>
-<rect x="662" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/05/16 (土) 鍵盤: 110,837</title></rect>
-<rect x="662" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/05/17 (日) 鍵盤: 0</title></rect>
-<rect x="676" y="20" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/05/18 (月) 鍵盤: 20,177</title></rect>
-<rect x="676" y="34" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/05/19 (火) 鍵盤: 21,626</title></rect>
-<rect x="676" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/05/20 (水) 鍵盤: 0</title></rect>
-<rect x="676" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/05/21 (木) 鍵盤: 20,005</title></rect>
-<rect x="676" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/05/22 (金) 鍵盤: 0</title></rect>
-<rect x="676" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/05/23 (土) 鍵盤: 128,085</title></rect>
-<rect x="676" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/05/24 (日) 鍵盤: 0</title></rect>
-<rect x="690" y="20" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/05/25 (月) 鍵盤: 20,267</title></rect>
-<rect x="690" y="34" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/05/26 (火) 鍵盤: 18,396</title></rect>
-<rect x="690" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/05/27 (水) 鍵盤: 0</title></rect>
-<rect x="690" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/05/28 (木) 鍵盤: 21,748</title></rect>
-<rect x="690" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/05/29 (金) 鍵盤: 0</title></rect>
-<rect x="690" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/05/30 (土) 鍵盤: 101,542</title></rect>
-<rect x="690" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/05/31 (日) 鍵盤: 0</title></rect>
-<rect x="704" y="20" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/06/01 (月) 鍵盤: 24,232</title></rect>
-<rect x="704" y="34" width="11" height="11" rx="2.5" fill="#5d87a6"><title>2026/06/02 (火) 鍵盤: 51,448</title></rect>
-<rect x="704" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/06/03 (水) 鍵盤: 0</title></rect>
-<rect x="704" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/06/04 (木) 鍵盤: 23,246</title></rect>
-<rect x="704" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/06/05 (金) 鍵盤: 0</title></rect>
-<rect x="704" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/06/06 (土) 鍵盤: 64,262</title></rect>
-<rect x="704" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/06/07 (日) 鍵盤: 0</title></rect>
-<rect x="718" y="20" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/06/08 (月) 鍵盤: 21,927</title></rect>
-<rect x="718" y="34" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/06/09 (火) 鍵盤: 23,659</title></rect>
-<rect x="718" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/06/10 (水) 鍵盤: 0</title></rect>
-<rect x="718" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/06/11 (木) 鍵盤: 0</title></rect>
-<rect x="718" y="76" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/06/12 (金) 鍵盤: 21,211</title></rect>
-<rect x="718" y="90" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/06/13 (土) 鍵盤: 80,559</title></rect>
-<rect x="718" y="104" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/06/14 (日) 鍵盤: 0</title></rect>
-<rect x="732" y="20" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/06/15 (月) 鍵盤: 21,637</title></rect>
-<rect x="732" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/06/16 (火) 鍵盤: 0</title></rect>
-<rect x="732" y="48" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/06/17 (水) 鍵盤: 0</title></rect>
-<rect x="732" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/06/18 (木) 鍵盤: 0</title></rect>
-<rect x="732" y="76" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/06/19 (金) 鍵盤: 20,217</title></rect>
-<rect x="732" y="90" width="11" height="11" rx="2.5" fill="#5d87a6"><title>2026/06/20 (土) 鍵盤: 52,773</title></rect>
-<rect x="732" y="104" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/06/21 (日) 鍵盤: 21,185</title></rect>
-<rect x="746" y="20" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/06/22 (月) 鍵盤: 17,325</title></rect>
-<rect x="746" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/06/23 (火) 鍵盤: 0</title></rect>
-<rect x="746" y="48" width="11" height="11" rx="2.5" fill="#c9d7e4"><title>2026/06/24 (水) 鍵盤: 19,329</title></rect>
-<rect x="746" y="62" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/06/25 (木) 鍵盤: 23,311</title></rect>
-<rect x="746" y="76" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/06/26 (金) 鍵盤: 0</title></rect>
-<rect x="746" y="90" width="11" height="11" rx="2.5" fill="#5d87a6"><title>2026/06/27 (土) 鍵盤: 59,696</title></rect>
-<rect x="746" y="104" width="11" height="11" rx="2.5" fill="#5d87a6"><title>2026/06/28 (日) 鍵盤: 48,767</title></rect>
-<rect x="760" y="20" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/06/29 (月) 鍵盤: 0</title></rect>
-<rect x="760" y="34" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/06/30 (火) 鍵盤: 0</title></rect>
-<rect x="760" y="48" width="11" height="11" rx="2.5" fill="#93b1c7"><title>2026/07/01 (水) 鍵盤: 21,784</title></rect>
-<rect x="760" y="62" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/07/02 (木) 鍵盤: 0</title></rect>
-<rect x="760" y="76" width="11" height="11" rx="2.5" fill="#5d87a6"><title>2026/07/03 (金) 鍵盤: 56,769</title></rect>
-<rect x="760" y="90" width="11" height="11" rx="2.5" fill="#edf0f3"><title>2026/07/04 (土) 鍵盤: 0</title></rect>
-<rect x="760" y="104" width="11" height="11" rx="2.5" fill="#33597b"><title>2026/07/05 (日) 鍵盤: 60,568</title></rect>
-</svg>
-  <div class="foot">Less <span class="sq" style="background:#edf0f3"></span><span class="sq" style="background:#c9d7e4"></span><span class="sq" style="background:#93b1c7"></span><span class="sq" style="background:#5d87a6"></span><span class="sq" style="background:#33597b"></span> More</div>
 </div>
+
+<!-- ============ PAGE 2 : heatmap ============ -->
+<div id="heatmapPage">
+  <div class="card">
+    <div class="head">
+      <div class="total"><span id="totalKeys"></span><small>KEYS</small></div>
+      <div class="meta" id="metaText"></div>
+    </div>
+    <div id="svgHolder"></div>
+    <div class="foot">
+      <span class="back" id="backBtn">← CSVを読み込み直す</span>
+      <span class="legend" id="legendHolder">Less </span>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS = ['#edf0f3', '#c9d7e4', '#93b1c7', '#5d87a6', '#33597b'];
+const MONTHS = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DOW_JA = ['月','火','水','木','金','土','日'];
+
+function level(v) {
+  if (v === 0) return 0;
+  if (v <= 20000) return 1;
+  if (v <= 40000) return 2;
+  if (v <= 60000) return 3;
+  return 4;
+}
+
+function parseCSV(text) {
+  const data = new Map(); // 'YYYY-MM-DD' -> keys
+  const lines = text.replace(/^﻿/, '').split(/\r?\n/);
+  for (const line of lines) {
+    const cols = line.trim().split(/[,\t]/);
+    if (cols.length < 2) continue;
+    const m = cols[0].match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+    if (!m) continue; // header etc.
+    const v = parseInt(cols[1].replace(/[^\d\-]/g, ''), 10);
+    if (isNaN(v)) continue;
+    const key = `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+    data.set(key, (data.get(key) || 0) + v);
+  }
+  return data;
+}
+
+function d(str) { const [y,m,dd] = str.split('-').map(Number); return new Date(y, m-1, dd); }
+function addDays(date, n) { const x = new Date(date); x.setDate(x.getDate() + n); return x; }
+function fmtKey(date) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`; }
+function fmtDot(date) { return `${date.getFullYear()}.${String(date.getMonth()+1).padStart(2,'0')}.${String(date.getDate()).padStart(2,'0')}`; }
+function fmtSlash(date) { return `${date.getFullYear()}/${String(date.getMonth()+1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')}`; }
+
+function render(data) {
+  const keys = [...data.keys()].sort();
+  const minDate = d(keys[0]), maxDate = d(keys[keys.length-1]);
+
+  // grid range: Monday-start, ~1 year (or full data range if longer)
+  let start = addDays(maxDate, -364);
+  if (minDate < start) start = minDate;
+  start = addDays(start, -((start.getDay() + 6) % 7)); // back to Monday
+  const gridEnd = addDays(maxDate, 6 - ((maxDate.getDay() + 6) % 7)); // forward to Sunday
+
+  const CELL = 11, GAP = 3, STEP = CELL + GAP, LEFT = 32, TOP = 20;
+  const weeks = Math.round((gridEnd - start) / 864e5 + 1) / 7;
+  const w = LEFT + weeks * STEP + 10, h = TOP + 7 * STEP + 6;
+
+  let svg = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" font-family="Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="10">`;
+
+  let lastMonth = -1;
+  for (let wk = 0; wk < weeks; wk++) {
+    const monday = addDays(start, wk * 7);
+    if (monday.getMonth() !== lastMonth) {
+      svg += `<text x="${LEFT + wk*STEP}" y="${TOP-8}" fill="#8b98a5">${MONTHS[monday.getMonth()+1]}</text>`;
+      lastMonth = monday.getMonth();
+    }
+  }
+  [[0,'Mon'],[2,'Wed'],[4,'Fri']].forEach(([i,l]) =>
+    svg += `<text x="${LEFT-5}" y="${TOP + i*STEP + 9}" text-anchor="end" fill="#8b98a5">${l}</text>`);
+
+  let total = 0;
+  for (let wk = 0; wk < weeks; wk++) {
+    for (let dow = 0; dow < 7; dow++) {
+      const day = addDays(start, wk*7 + dow);
+      if (day > gridEnd) break;
+      const v = data.get(fmtKey(day)) || 0;
+      total += v;
+      svg += `<rect x="${LEFT + wk*STEP}" y="${TOP + dow*STEP}" width="${CELL}" height="${CELL}" rx="2.5" fill="${COLORS[level(v)]}">` +
+             `<title>${fmtSlash(day)} (${DOW_JA[dow]}) 鍵盤: ${v.toLocaleString()}</title></rect>`;
+    }
+  }
+  svg += '</svg>';
+
+  document.getElementById('totalKeys').textContent = total.toLocaleString();
+  document.getElementById('metaText').innerHTML =
+    `${fmtDot(minDate)} — ${fmtDot(maxDate)}&ensp;/&ensp;<b>${data.size}</b> days`;
+  document.getElementById('svgHolder').innerHTML = svg;
+
+  const lg = document.getElementById('legendHolder');
+  lg.innerHTML = 'Less ' + COLORS.map(c => `<span class="sq" style="background:${c}"></span>`).join('') + ' More';
+
+  document.getElementById('inputPage').style.display = 'none';
+  document.getElementById('heatmapPage').style.display = 'block';
+}
+
+function load(text) {
+  const err = document.getElementById('errMsg');
+  const data = parseCSV(text);
+  if (data.size === 0) {
+    err.textContent = 'データを読み取れませんでした。「プレー日,鍵盤,スクラッチ」形式のCSVを指定してください。';
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+  render(data);
+}
+
+// --- file upload ---
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) readFile(fileInput.files[0]); });
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('over');
+  if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
+});
+function readFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => load(reader.result);
+  reader.readAsText(file); // UTF-8 (BOM対応済み)
+}
+
+// --- paste ---
+document.getElementById('goBtn').addEventListener('click', () =>
+  load(document.getElementById('pasteArea').value));
+
+// --- back ---
+document.getElementById('backBtn').addEventListener('click', () => {
+  document.getElementById('heatmapPage').style.display = 'none';
+  document.getElementById('inputPage').style.display = 'block';
+  fileInput.value = '';
+});
+</script>
 </body>
 </html>
