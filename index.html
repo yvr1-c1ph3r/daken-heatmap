@@ -12,7 +12,8 @@
           padding: 20px 24px; box-shadow: 0 1px 4px rgba(51,89,123,.06); display: inline-block; }
 
   /* ---- page 1: input ---- */
-  #inputPage .card { width: 420px; }
+  #inputPage { width: 100%; max-width: 452px; padding: 24px 16px; box-sizing: border-box; }
+  #inputPage .card { width: 100%; box-sizing: border-box; }
   .title { font-size: 15px; font-weight: 700; letter-spacing: .06em; color: #33597b; margin-bottom: 16px; }
   .drop { border: 1.5px dashed #c9d7e4; border-radius: 10px; padding: 26px 16px; text-align: center;
           color: #8b98a5; font-size: 12.5px; cursor: pointer; transition: .15s; }
@@ -36,6 +37,8 @@
   #heatmapPage { display: none; width: 100%; }
   #heatmapPage .card { display: block; width: 100%; box-sizing: border-box; }
   #svgHolder svg { display: block; width: 100%; height: auto; }
+  #svgHolder svg + svg { margin-top: 10px; }
+  .head { flex-wrap: wrap; }
   .head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; gap: 24px; }
   .total { font-size: 26px; font-weight: 700; letter-spacing: .02em; color: #33597b; }
   .total small { font-size: 12px; font-weight: 600; color: #8b98a5; margin-left: 6px; letter-spacing: .12em; }
@@ -121,35 +124,27 @@ function fmtSlash(date) { return `${date.getFullYear()}/${String(date.getMonth()
 
 let currentData = null;
 
-function render(data) {
-  const keys = [...data.keys()].sort();
-  const minDate = d(keys[0]), maxDate = d(keys[keys.length-1]);
-
+// 1つのヒートマップSVGを生成（weeks=描画する週数、viewWeeks=viewBox上の週数＝段間でセルサイズを揃える用）
+function buildSVG(data, start, weeks, viewWeeks, gridEnd) {
   const CELL = 11, GAP = 3, STEP = CELL + GAP, LEFT = 32, TOP = 20;
-
-  // 横幅に応じて表示週数を決定（狭いほど期間を短く。スマホ幅なら約4か月）
-  const holderW = document.getElementById('svgHolder').clientWidth || 800;
-  let weeks = Math.floor((holderW - LEFT - 10) / STEP);
-  weeks = Math.max(12, Math.min(weeks, 53));
-
-  // grid range: Monday-start, 直近weeks週（データ期間がそれより短ければ全期間）
-  const gridEnd = addDays(maxDate, 6 - ((maxDate.getDay() + 6) % 7)); // forward to Sunday
-  const dataWeeks = Math.ceil(((gridEnd - addDays(minDate, -((minDate.getDay() + 6) % 7))) / 864e5 + 1) / 7);
-  weeks = Math.min(weeks, dataWeeks);
-  const start = addDays(gridEnd, -(weeks * 7 - 1)); // Monday
-
-  const w = LEFT + weeks * STEP + 10, h = TOP + 7 * STEP + 6;
+  const w = LEFT + viewWeeks * STEP + 10, h = TOP + 7 * STEP + 6;
 
   let svg = `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" font-family="Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="10">`;
 
+  const labels = [];
   let lastMonth = -1;
   for (let wk = 0; wk < weeks; wk++) {
     const monday = addDays(start, wk * 7);
     if (monday.getMonth() !== lastMonth) {
-      svg += `<text x="${LEFT + wk*STEP}" y="${TOP-8}" fill="#8b98a5">${MONTHS[monday.getMonth()+1]}</text>`;
+      labels.push([wk, monday.getMonth()]);
       lastMonth = monday.getMonth();
     }
   }
+  // 次の月ラベルと近すぎて重なる場合（3列未満）は前のラベルを省略
+  labels.forEach(([wk, m], idx) => {
+    if (idx < labels.length - 1 && labels[idx + 1][0] - wk < 3) return;
+    svg += `<text x="${LEFT + wk*STEP}" y="${TOP-8}" fill="#8b98a5">${MONTHS[m+1]}</text>`;
+  });
   [[0,'Mon'],[2,'Wed'],[4,'Fri']].forEach(([i,l]) =>
     svg += `<text x="${LEFT-5}" y="${TOP + i*STEP + 9}" text-anchor="end" fill="#8b98a5">${l}</text>`);
 
@@ -162,7 +157,42 @@ function render(data) {
              `<title>${fmtSlash(day)} (${DOW_JA[dow]}) 鍵盤: ${v.toLocaleString()}</title></rect>`;
     }
   }
-  svg += '</svg>';
+  return svg + '</svg>';
+}
+
+function render(data) {
+  const keys = [...data.keys()].sort();
+  const minDate = d(keys[0]), maxDate = d(keys[keys.length-1]);
+  const STEP = 14, LEFT = 32;
+
+  // 全期間グリッド（Monday始まり、最大53週）
+  const gridEnd = addDays(maxDate, 6 - ((maxDate.getDay() + 6) % 7)); // forward to Sunday
+  const dataWeeks = Math.ceil(((gridEnd - addDays(minDate, -((minDate.getDay() + 6) % 7))) / 864e5 + 1) / 7);
+  const fullWeeks = Math.min(dataWeeks, 53);
+  const fullStart = addDays(gridEnd, -(fullWeeks * 7 - 1)); // Monday
+
+  const holder = document.getElementById('svgHolder');
+  const holderW = holder.clientWidth || 800;
+
+  let html = '';
+  if (holderW < 500) {
+    // スマホ: 全期間を約4か月ずつ3段に分割して縦に並べる
+    const segCount = Math.min(3, Math.ceil(fullWeeks / 18));
+    const segWeeks = Math.ceil(fullWeeks / segCount);
+    for (let i = 0; i < segCount; i++) {
+      const segStart = addDays(fullStart, i * segWeeks * 7);
+      const wks = Math.min(segWeeks, fullWeeks - i * segWeeks);
+      if (wks <= 0) break;
+      html += buildSVG(data, segStart, wks, segWeeks, gridEnd);
+    }
+  } else {
+    // PC/タブレット: 幅に収まる週数だけ直近から表示
+    let weeks = Math.floor((holderW - LEFT - 10) / STEP);
+    weeks = Math.max(12, Math.min(weeks, fullWeeks));
+    const start = addDays(gridEnd, -(weeks * 7 - 1));
+    html = buildSVG(data, start, weeks, weeks, gridEnd);
+  }
+  holder.innerHTML = html;
 
   // 合計・日数・期間はCSV全体の値（表示範囲に依存しない）
   let total = 0;
@@ -170,7 +200,6 @@ function render(data) {
   document.getElementById('totalKeys').textContent = total.toLocaleString();
   document.getElementById('metaText').innerHTML =
     `${fmtDot(minDate)} — ${fmtDot(maxDate)}&ensp;/&ensp;<b>${data.size}</b> days`;
-  document.getElementById('svgHolder').innerHTML = svg;
 
   const lg = document.getElementById('legendHolder');
   lg.innerHTML = 'Less ' + COLORS.map(c => `<span class="sq" style="background:${c}"></span>`).join('') + ' More';
