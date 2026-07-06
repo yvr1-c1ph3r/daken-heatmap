@@ -33,7 +33,9 @@
   .err { color: #c0574f; font-size: 11.5px; margin-top: 8px; display: none; }
 
   /* ---- page 2: heatmap ---- */
-  #heatmapPage { display: none; }
+  #heatmapPage { display: none; width: 100%; }
+  #heatmapPage .card { display: block; width: 100%; box-sizing: border-box; }
+  #svgHolder svg { display: block; width: 100%; height: auto; }
   .head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; gap: 24px; }
   .total { font-size: 26px; font-weight: 700; letter-spacing: .02em; color: #33597b; }
   .total small { font-size: 12px; font-weight: 600; color: #8b98a5; margin-left: 6px; letter-spacing: .12em; }
@@ -117,21 +119,28 @@ function fmtKey(date) { return `${date.getFullYear()}-${String(date.getMonth()+1
 function fmtDot(date) { return `${date.getFullYear()}.${String(date.getMonth()+1).padStart(2,'0')}.${String(date.getDate()).padStart(2,'0')}`; }
 function fmtSlash(date) { return `${date.getFullYear()}/${String(date.getMonth()+1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')}`; }
 
+let currentData = null;
+
 function render(data) {
   const keys = [...data.keys()].sort();
   const minDate = d(keys[0]), maxDate = d(keys[keys.length-1]);
 
-  // grid range: Monday-start, ~1 year (or full data range if longer)
-  let start = addDays(maxDate, -364);
-  if (minDate < start) start = minDate;
-  start = addDays(start, -((start.getDay() + 6) % 7)); // back to Monday
-  const gridEnd = addDays(maxDate, 6 - ((maxDate.getDay() + 6) % 7)); // forward to Sunday
-
   const CELL = 11, GAP = 3, STEP = CELL + GAP, LEFT = 32, TOP = 20;
-  const weeks = Math.round((gridEnd - start) / 864e5 + 1) / 7;
+
+  // 横幅に応じて表示週数を決定（狭いほど期間を短く。スマホ幅なら約4か月）
+  const holderW = document.getElementById('svgHolder').clientWidth || 800;
+  let weeks = Math.floor((holderW - LEFT - 10) / STEP);
+  weeks = Math.max(12, Math.min(weeks, 53));
+
+  // grid range: Monday-start, 直近weeks週（データ期間がそれより短ければ全期間）
+  const gridEnd = addDays(maxDate, 6 - ((maxDate.getDay() + 6) % 7)); // forward to Sunday
+  const dataWeeks = Math.ceil(((gridEnd - addDays(minDate, -((minDate.getDay() + 6) % 7))) / 864e5 + 1) / 7);
+  weeks = Math.min(weeks, dataWeeks);
+  const start = addDays(gridEnd, -(weeks * 7 - 1)); // Monday
+
   const w = LEFT + weeks * STEP + 10, h = TOP + 7 * STEP + 6;
 
-  let svg = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" font-family="Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="10">`;
+  let svg = `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" font-family="Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="10">`;
 
   let lastMonth = -1;
   for (let wk = 0; wk < weeks; wk++) {
@@ -144,19 +153,20 @@ function render(data) {
   [[0,'Mon'],[2,'Wed'],[4,'Fri']].forEach(([i,l]) =>
     svg += `<text x="${LEFT-5}" y="${TOP + i*STEP + 9}" text-anchor="end" fill="#8b98a5">${l}</text>`);
 
-  let total = 0;
   for (let wk = 0; wk < weeks; wk++) {
     for (let dow = 0; dow < 7; dow++) {
       const day = addDays(start, wk*7 + dow);
       if (day > gridEnd) break;
       const v = data.get(fmtKey(day)) || 0;
-      total += v;
       svg += `<rect x="${LEFT + wk*STEP}" y="${TOP + dow*STEP}" width="${CELL}" height="${CELL}" rx="2.5" fill="${COLORS[level(v)]}">` +
              `<title>${fmtSlash(day)} (${DOW_JA[dow]}) 鍵盤: ${v.toLocaleString()}</title></rect>`;
     }
   }
   svg += '</svg>';
 
+  // 合計・日数・期間はCSV全体の値（表示範囲に依存しない）
+  let total = 0;
+  for (const v of data.values()) total += v;
   document.getElementById('totalKeys').textContent = total.toLocaleString();
   document.getElementById('metaText').innerHTML =
     `${fmtDot(minDate)} — ${fmtDot(maxDate)}&ensp;/&ensp;<b>${data.size}</b> days`;
@@ -164,12 +174,26 @@ function render(data) {
 
   const lg = document.getElementById('legendHolder');
   lg.innerHTML = 'Less ' + COLORS.map(c => `<span class="sq" style="background:${c}"></span>`).join('') + ' More';
-
-  document.getElementById('inputPage').style.display = 'none';
-  document.getElementById('heatmapPage').style.display = 'block';
 }
 
-function load(text) {
+function showHeatmap(data) {
+  currentData = data;
+  document.getElementById('inputPage').style.display = 'none';
+  document.getElementById('heatmapPage').style.display = 'block';
+  render(data); // 表示後に幅を測って描画
+}
+
+// リサイズで表示期間を再計算
+let resizeTimer;
+window.addEventListener('resize', () => {
+  if (!currentData) return;
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => render(currentData), 150);
+});
+
+const STORAGE_KEY = 'keysHeatmapCSV';
+
+function load(text, save = true) {
   const err = document.getElementById('errMsg');
   const data = parseCSV(text);
   if (data.size === 0) {
@@ -178,7 +202,8 @@ function load(text) {
     return;
   }
   err.style.display = 'none';
-  render(data);
+  if (save) { try { localStorage.setItem(STORAGE_KEY, text); } catch (e) {} }
+  showHeatmap(data);
 }
 
 // --- file upload ---
@@ -204,10 +229,18 @@ document.getElementById('goBtn').addEventListener('click', () =>
 
 // --- back ---
 document.getElementById('backBtn').addEventListener('click', () => {
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  currentData = null;
   document.getElementById('heatmapPage').style.display = 'none';
   document.getElementById('inputPage').style.display = 'block';
   fileInput.value = '';
 });
+
+// --- 起動時: 保存済みデータがあればヒートマップを直接表示 ---
+try {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) load(saved, false);
+} catch (e) {}
 </script>
 </body>
 </html>
