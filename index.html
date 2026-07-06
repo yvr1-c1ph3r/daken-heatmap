@@ -49,6 +49,19 @@
   .sq { width: 11px; height: 11px; border-radius: 2.5px; display: inline-block; }
   .back { color: #b6c1cb; cursor: pointer; letter-spacing: .05em; }
   .back:hover { color: #5d87a6; }
+
+  /* ---- mobile: 1画面にぴったり収める ---- */
+  @media (max-width: 500px) {
+    html, body { height: 100%; }
+    body { height: 100vh; height: 100dvh; overflow: hidden; }
+    #heatmapPage { height: 100%; }
+    #heatmapPage .card { height: 100%; display: flex; flex-direction: column; }
+    .head { flex-shrink: 0; }
+    #svgHolder { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-evenly; }
+    #svgHolder svg { width: 100%; height: auto; max-height: 31%; }
+    #svgHolder svg + svg { margin-top: 0; }
+    .foot { flex-shrink: 0; }
+  }
 </style>
 </head>
 <body>
