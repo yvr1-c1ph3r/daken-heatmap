@@ -5,77 +5,90 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KEYS Heatmap</title>
 <style>
-  :root { --c1: #c9d7e4; --c2: #93b1c7; --c3: #5d87a6; --c4: #33597b; }
-  body { font-family: Inter, -apple-system, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif;
-         margin: 0; padding: 0; color: #2c3a47; background: transparent;
-         display: flex; justify-content: center; }
-  .card { background: #fff; border: 1px solid #e3e8ee; border-radius: 12px;
-          padding: 20px 24px; box-shadow: 0 1px 4px rgba(51,89,123,.06); display: inline-block; }
+:root { --c1: #c9d7e4; --c2: #93b1c7; --c3: #5d87a6; --c4: #33597b; }
+body { font-family: Inter, -apple-system, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif;
+  margin: 0; padding: 0; color: #2c3a47; background: transparent;
+  display: flex; justify-content: center; }
+.card { background: #fff; border: 1px solid #e3e8ee; border-radius: 12px;
+  padding: 20px 24px; box-shadow: 0 1px 4px rgba(51,89,123,.06); display: inline-block; }
 
-  /* ---- page 1: input ---- */
-  #inputPage { width: 100%; max-width: 452px; padding: 24px 16px; box-sizing: border-box; }
-  #inputPage .card { width: 100%; box-sizing: border-box; }
-  .title { font-size: 15px; font-weight: 700; letter-spacing: .06em; color: var(--c4); margin-bottom: 12px; }
-  .swatches { display: flex; gap: 9px; margin-bottom: 16px; }
-  .sw { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; transition: .15s; }
-  .sw:hover { transform: scale(1.15); }
-  .sw.sel { outline: 2px solid var(--c4); outline-offset: 2px; }
-  .drop { border: 1.5px dashed var(--c1); border-radius: 10px; padding: 26px 16px; text-align: center;
-          color: #8b98a5; font-size: 12.5px; cursor: pointer; transition: .15s; }
-  .drop:hover, .drop.over { border-color: var(--c3); background: color-mix(in srgb, var(--c1) 22%, #fff); color: var(--c3); }
-  .drop b { color: var(--c3); }
-  .or { display: flex; align-items: center; gap: 10px; margin: 16px 0 12px; color: #b6c1cb; font-size: 11px; letter-spacing: .15em; }
-  .or::before, .or::after { content: ""; flex: 1; height: 1px; background: #e3e8ee; }
-  .note { font-size: 11.5px; color: #8b98a5; margin-bottom: 6px; }
-  .note a { color: var(--c3); font-weight: 600; }
-  textarea { width: 100%; box-sizing: border-box; height: 110px; border: 1px solid #e3e8ee; border-radius: 8px;
-             padding: 10px; font-size: 11.5px; font-family: ui-monospace, Consolas, monospace; color: #2c3a47;
-             resize: vertical; outline: none; }
-  textarea:focus { border-color: var(--c2); }
-  button.go { width: 100%; margin-top: 12px; padding: 10px; border: none; border-radius: 8px;
-              background: var(--c4); color: #fff; font-size: 13px; font-weight: 600; letter-spacing: .08em;
-              cursor: pointer; transition: .15s; }
-  button.go:hover { filter: brightness(.88); }
-  .err { color: #c0574f; font-size: 11.5px; margin-top: 8px; display: none; }
+/* ---- page 1: input ---- */
+#inputPage { width: 100%; max-width: 452px; padding: 24px 16px; box-sizing: border-box; }
+#inputPage .card { width: 100%; box-sizing: border-box; }
+.title { font-size: 15px; font-weight: 700; letter-spacing: .06em; color: var(--c4); margin-bottom: 12px; }
+.swatches { display: flex; gap: 9px; margin-bottom: 16px; }
+.sw { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; transition: .15s; }
+.sw:hover { transform: scale(1.15); }
+.sw.sel { outline: 2px solid var(--c4); outline-offset: 2px; }
+.drop { border: 1.5px dashed var(--c1); border-radius: 10px; padding: 26px 16px; text-align: center;
+  color: #8b98a5; font-size: 12.5px; cursor: pointer; transition: .15s; }
+.drop:hover, .drop.over { border-color: var(--c3); background: color-mix(in srgb, var(--c1) 22%, #fff); color: var(--c3); }
+.drop b { color: var(--c3); }
+.or { display: flex; align-items: center; gap: 10px; margin: 16px 0 12px; color: #b6c1cb; font-size: 11px; letter-spacing: .15em; }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: #e3e8ee; }
+.note { font-size: 11.5px; color: #8b98a5; margin-bottom: 6px; }
+.note a { color: var(--c3); font-weight: 600; }
+textarea { width: 100%; box-sizing: border-box; height: 110px; border: 1px solid #e3e8ee; border-radius: 8px;
+  padding: 10px; font-size: 11.5px; font-family: ui-monospace, Consolas, monospace; color: #2c3a47;
+  resize: vertical; outline: none; }
+textarea:focus { border-color: var(--c2); }
+button.go { width: 100%; margin-top: 12px; padding: 10px; border: none; border-radius: 8px;
+  background: var(--c4); color: #fff; font-size: 13px; font-weight: 600; letter-spacing: .08em;
+  cursor: pointer; transition: .15s; }
+button.go:hover { filter: brightness(.88); }
+.err { color: #c0574f; font-size: 11.5px; margin-top: 8px; display: none; }
 
-  /* ---- page 2: heatmap ---- */
-  #heatmapPage { display: none; width: 100%; }
-  #heatmapPage .card { display: block; width: 100%; box-sizing: border-box; }
-  #svgHolder svg { display: block; width: 100%; height: auto; }
-  #svgHolder svg + svg { margin-top: 10px; }
-  .head { flex-wrap: wrap; }
-  .head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; gap: 24px; }
-  .total { font-size: 26px; font-weight: 700; letter-spacing: .02em; color: var(--c4); }
-  .total small { font-size: 12px; font-weight: 600; color: #8b98a5; margin-left: 6px; letter-spacing: .12em; }
-  .meta { font-size: 11.5px; color: #8b98a5; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
-  .meta b { color: var(--c3); font-weight: 600; }
-  .headR { margin-left: auto; text-align: right; }
-  .vers { display: grid; grid-template-columns: repeat(2, auto); gap: 2px 14px;
-          justify-content: end; justify-items: end;
-          font-size: 14px; font-weight: 600; color: var(--c3); letter-spacing: .04em; margin-bottom: 4px; }
-  .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: #8b98a5; }
-  .legend { display: flex; align-items: center; gap: 5px; }
-  .sq { width: 11px; height: 11px; border-radius: 2.5px; display: inline-block; }
-  .back { color: #b6c1cb; cursor: pointer; letter-spacing: .05em; }
-  .back:hover { color: #5d87a6; }
+/* ---- page 2: heatmap ---- */
+#heatmapPage { display: none; width: 100%; }
+#heatmapPage .card { display: block; width: 100%; box-sizing: border-box; }
+#svgHolder svg { display: block; width: 100%; height: auto; }
+#svgHolder svg + svg { margin-top: 10px; }
+.head { flex-wrap: wrap; }
+.head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; gap: 24px; }
+.total { font-size: 26px; font-weight: 700; letter-spacing: .02em; color: var(--c4); }
+.total small { font-size: 12px; font-weight: 600; color: #8b98a5; margin-left: 6px; letter-spacing: .12em; }
+.meta { font-size: 11.5px; color: #8b98a5; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.meta b { color: var(--c3); font-weight: 600; }
+.headR { margin-left: auto; text-align: right; }
+.vers { display: grid; grid-template-columns: repeat(2, auto); gap: 2px 14px;
+  justify-content: end; justify-items: end;
+  font-size: 14px; font-weight: 600; color: var(--c3); letter-spacing: .04em; margin-bottom: 4px; }
+.foot { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: #8b98a5; }
+.legend { display: flex; align-items: center; gap: 5px; }
+.sq { width: 11px; height: 11px; border-radius: 2.5px; display: inline-block; }
+.back { color: #b6c1cb; cursor: pointer; letter-spacing: .05em; }
+.back:hover { color: #5d87a6; }
 
-  /* ---- mobile: 1画面にぴったり収める ---- */
-  @media (max-width: 500px) {
-    html, body { height: 100%; }
-    body { height: 100vh; height: 100dvh; overflow: hidden; }
-    #heatmapPage { height: 100%; }
-    #heatmapPage .card { height: 100%; display: flex; flex-direction: column; }
-    .head { flex-shrink: 0; gap: 10px; }
-    #svgHolder { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-evenly; }
-    #svgHolder svg { width: 100%; height: auto; max-height: 31%; }
-    #svgHolder svg + svg { margin-top: 0; }
-    .foot { flex-shrink: 0; }
-    /* 稼働1年超（4段以上）は1画面に収まらないためスクロールを許可 */
-    body:has(#svgHolder svg:nth-of-type(4)) { overflow: auto; height: auto; }
-    #svgHolder:has(svg:nth-of-type(4)) { flex: none; }
-    #svgHolder:has(svg:nth-of-type(4)) svg { max-height: none; }
-    #svgHolder:has(svg:nth-of-type(4)) svg + svg { margin-top: 10px; }
-  }
+/* ---- ver / month 切り替えトグル ---- */
+.toggle { display: inline-flex; margin-bottom: 6px; border: 1px solid #e3e8ee; border-radius: 7px;
+  overflow: hidden; }
+.toggleBtn { padding: 3px 10px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
+  color: #8b98a5; background: #fff; cursor: pointer; transition: .15s; user-select: none; }
+.toggleBtn:hover { color: var(--c3); }
+.toggleBtn.sel { background: var(--c4); color: #fff; }
+.toggleBtn + .toggleBtn { border-left: 1px solid #e3e8ee; }
+
+/* ---- mobile: 1画面にぴったり収める ---- */
+@media (max-width: 500px) {
+  html, body { height: 100%; }
+  body { height: 100vh; height: 100dvh; overflow: hidden; }
+  #heatmapPage { height: 100%; }
+  #heatmapPage .card { height: 100%; display: flex; flex-direction: column; }
+  .head { flex-shrink: 0; gap: 10px; }
+  #svgHolder { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-evenly; }
+  #svgHolder svg { width: 100%; height: auto; max-height: 31%; }
+  #svgHolder svg + svg { margin-top: 0; }
+  .foot { flex-shrink: 0; }
+  /* 稼働1年超（4段以上）は1画面に収まらないためスクロールを許可 */
+  body:has(#svgHolder svg:nth-of-type(4)) { overflow: auto; height: auto; }
+  #svgHolder:has(svg:nth-of-type(4)) { flex: none; }
+  #svgHolder:has(svg:nth-of-type(4)) svg { max-height: none; }
+  #svgHolder:has(svg:nth-of-type(4)) svg + svg { margin-top: 10px; }
+
+  /* month表示（グリッド1枚のみ）は空きスペースいっぱいに大きく表示する */
+  #svgHolder.single { justify-content: center; align-items: center; }
+  #svgHolder.single svg { width: auto; height: auto; max-width: 100%; max-height: 88%; }
+}
 </style>
 </head>
 <body>
@@ -84,16 +97,12 @@
 <div id="inputPage">
   <div class="card">
     <div class="title">KEYS HEATMAP</div>
-
     <div class="swatches" id="swatches"></div>
-
     <div class="drop" id="dropZone">
       <b>CSVファイルを選択</b> またはここにドラッグ＆ドロップ
       <input type="file" id="fileInput" accept=".csv,text/csv" hidden>
     </div>
-
     <div class="or">OR</div>
-
     <div class="note">CSVダウンロードは<a href="https://p.eagate.573.jp/game/2dx/33/djdata/score_download.html" target="_blank" rel="noopener">こちら</a>から</div>
     <textarea id="pasteArea" placeholder="プレー日,鍵盤,スクラッチ&#10;2026/07/05,60568,3427&#10;…をそのまま貼り付け"></textarea>
     <button class="go" id="goBtn">ヒートマップを表示</button>
@@ -105,8 +114,12 @@
 <div id="heatmapPage">
   <div class="card">
     <div class="head">
-      <div class="total"><span id="totalKeys"></span><small>KEYS</small></div>
+      <div class="total"><span id="totalKeys"></span><small id="totalLabel">KEYS</small></div>
       <div class="headR">
+        <div class="toggle" id="viewToggle">
+          <span class="toggleBtn sel" data-mode="ver">VER</span>
+          <span class="toggleBtn" data-mode="month">MONTH</span>
+        </div>
         <div class="vers" id="versText"></div>
         <div class="meta" id="metaText"></div>
       </div>
@@ -122,18 +135,18 @@
 <script>
 // くすんだカラーパレット（薄→濃の4段階）
 const THEMES = {
-  red:    ['#e6cbcb', '#cd9797', '#ad6363', '#7e3a3a'],
-  pink:   ['#e6cbd8', '#cd97b0', '#ad6389', '#7e3a5e'],
+  red: ['#e6cbcb', '#cd9797', '#ad6363', '#7e3a3a'],
+  pink: ['#e6cbd8', '#cd97b0', '#ad6389', '#7e3a5e'],
   purple: ['#d8cfe4', '#ad9dc9', '#8370a8', '#584a7c'],
-  blue:   ['#c9d7e4', '#93b1c7', '#5d87a6', '#33597b'],
-  green:  ['#cdddd2', '#9cbba6', '#6b9979', '#3f7050'],
+  blue: ['#c9d7e4', '#93b1c7', '#5d87a6', '#33597b'],
+  green: ['#cdddd2', '#9cbba6', '#6b9979', '#3f7050'],
   yellow: ['#e6dfc0', '#cdc088', '#ab9c55', '#7c6f33'],
   orange: ['#e9d5c1', '#d2ab83', '#b47e4e', '#85572e'],
-  brown:  ['#ded1c8', '#baa290', '#94745f', '#6a4e3d'],
-  gray:   ['#d7dade', '#adb3ba', '#828a93', '#50575f'],
+  brown: ['#ded1c8', '#baa290', '#94745f', '#6a4e3d'],
+  gray: ['#d7dade', '#adb3ba', '#828a93', '#50575f'],
 };
 const THEME_NAMES = { red:'レッド', pink:'ピンク', purple:'パープル', blue:'ブルー',
-                      green:'グリーン', yellow:'イエロー', orange:'オレンジ', brown:'ブラウン', gray:'グレー' };
+  green:'グリーン', yellow:'イエロー', orange:'オレンジ', brown:'ブラウン', gray:'グレー' };
 const THEME_KEY = 'keysHeatmapTheme';
 let COLORS = ['#edf0f3', ...THEMES.blue];
 
@@ -167,6 +180,7 @@ function versionsInRange(minDate, maxDate) {
   }
   return out;
 }
+
 const MONTHS = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DOW_JA = ['月','火','水','木','金','土','日'];
 
@@ -202,14 +216,13 @@ function fmtDot(date) { return `${date.getFullYear()}.${String(date.getMonth()+1
 function fmtSlash(date) { return `${date.getFullYear()}/${String(date.getMonth()+1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')}`; }
 
 let currentData = null;
+let viewMode = 'ver'; // 'ver' | 'month'
 
 // 1つのヒートマップSVGを生成（weeks=描画する週数、viewWeeks=viewBox上の週数＝段間でセルサイズを揃える用）
-function buildSVG(data, start, weeks, viewWeeks, gridEnd) {
-  const CELL = 11, GAP = 3, STEP = CELL + GAP, LEFT = 32, TOP = 20;
+function buildSVG(data, start, weeks, viewWeeks, gridEnd, cellSize, gap) {
+  const CELL = cellSize || 11, GAP = gap || 3, STEP = CELL + GAP, LEFT = 32, TOP = 20;
   const w = LEFT + viewWeeks * STEP + 10, h = TOP + 7 * STEP + 6;
-
   let svg = `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" font-family="Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="10">`;
-
   const labels = [];
   let lastMonth = -1;
   for (let wk = 0; wk < weeks; wk++) {
@@ -233,13 +246,14 @@ function buildSVG(data, start, weeks, viewWeeks, gridEnd) {
       if (day > gridEnd) break;
       const v = data.get(fmtKey(day)) || 0;
       svg += `<rect x="${LEFT + wk*STEP}" y="${TOP + dow*STEP}" width="${CELL}" height="${CELL}" rx="2.5" fill="${COLORS[level(v)]}">` +
-             `<title>${fmtSlash(day)} (${DOW_JA[dow]}) 鍵盤: ${v.toLocaleString()}</title></rect>`;
+        `<title>${fmtSlash(day)} (${DOW_JA[dow]}) 鍵盤: ${v.toLocaleString()}</title></rect>`;
     }
   }
   return svg + '</svg>';
 }
 
-function render(data) {
+// ---- ver表示: 従来通り、稼働バージョン単位のヒートマップ ----
+function renderVer(data) {
   const keys = [...data.keys()].sort();
   const minDate = d(keys[0]), maxDate = d(keys[keys.length-1]);
   const STEP = 14, LEFT = 32;
@@ -251,6 +265,7 @@ function render(data) {
   }
   if (!vStart) vStart = minDate;
   const fullStart = addDays(vStart, -((vStart.getDay() + 6) % 7)); // back to Monday
+
   // 基本は稼働開始から1年間。超えるデータがある場合は1か月単位でグリッドを延長
   let months = 12;
   while (addDays(addMonths(vStart, months), -1) < maxDate) months++;
@@ -259,6 +274,7 @@ function render(data) {
   const fullWeeks = Math.round(((gridEnd - fullStart) / 864e5 + 1) / 7);
 
   const holder = document.getElementById('svgHolder');
+  holder.classList.remove('single');
   const holderW = holder.clientWidth || 800;
 
   // 段数: 1行の最大週数（スマホ≈18週 / 中間≈27週 / PC≈53週）から必要な段数を計算。
@@ -291,15 +307,58 @@ function render(data) {
   let total = 0;
   for (const v of data.values()) total += v;
   document.getElementById('totalKeys').textContent = total.toLocaleString();
+  document.getElementById('totalLabel').textContent = 'KEYS';
+
   const versList = versionsInRange(minDate, maxDate);
   const versEl = document.getElementById('versText');
   versEl.innerHTML = versList.map(v => `<span>${v}</span>`).join('');
   versEl.style.gridTemplateColumns = `repeat(${Math.min(2, versList.length)}, auto)`;
+
   document.getElementById('metaText').innerHTML =
     `${fmtDot(minDate)} — ${fmtDot(maxDate)}&ensp;/&ensp;<b>${data.size}</b> days`;
 
   const lg = document.getElementById('legendHolder');
   lg.innerHTML = 'Less ' + COLORS.map(c => `<span class="sq" style="background:${c}"></span>`).join('') + ' More';
+}
+
+// ---- month表示: 今月のみのヒートマップ／今月の打鍵数のみ表示 ----
+function renderMonth(data) {
+  const holder = document.getElementById('svgHolder');
+
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const monthStart = new Date(y, m, 1);
+  const monthEnd = new Date(y, m + 1, 0); // 今月最終日
+  const gridStart = addDays(monthStart, -((monthStart.getDay() + 6) % 7)); // 月曜始まり
+  const gridEnd = addDays(monthEnd, 6 - ((monthEnd.getDay() + 6) % 7));    // 日曜終わり
+  const weeks = Math.round(((gridEnd - gridStart) / 864e5 + 1) / 7);
+
+  holder.classList.add('single');
+  holder.innerHTML = buildSVG(data, gridStart, weeks, weeks, gridEnd, 30, 8);
+
+  // 今月分の打鍵数のみ集計
+  let total = 0, dayCount = 0;
+  for (let dt = new Date(monthStart); dt <= monthEnd; dt = addDays(dt, 1)) {
+    const v = data.get(fmtKey(dt));
+    if (v) { total += v; dayCount++; }
+  }
+  document.getElementById('totalKeys').textContent = total.toLocaleString();
+  document.getElementById('totalLabel').textContent = 'KEYS THIS MONTH';
+
+  const versEl = document.getElementById('versText');
+  versEl.innerHTML = `<span>${y}/${String(m+1).padStart(2,'0')}</span>`;
+  versEl.style.gridTemplateColumns = 'repeat(1, auto)';
+
+  document.getElementById('metaText').innerHTML =
+    `${fmtDot(monthStart)} — ${fmtDot(monthEnd)}&ensp;/&ensp;<b>${dayCount}</b> days`;
+
+  const lg = document.getElementById('legendHolder');
+  lg.innerHTML = 'Less ' + COLORS.map(c => `<span class="sq" style="background:${c}"></span>`).join('') + ' More';
+}
+
+function render(data) {
+  if (viewMode === 'month') renderMonth(data);
+  else renderVer(data);
 }
 
 function showHeatmap(data) {
@@ -318,7 +377,6 @@ window.addEventListener('resize', () => {
 });
 
 const STORAGE_KEY = 'keysHeatmapCSV';
-
 function load(text, save = true) {
   const err = document.getElementById('errMsg');
   const data = parseCSV(text);
@@ -357,9 +415,21 @@ document.getElementById('goBtn').addEventListener('click', () =>
 document.getElementById('backBtn').addEventListener('click', () => {
   try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
   currentData = null;
+  viewMode = 'ver';
+  document.querySelectorAll('#viewToggle .toggleBtn').forEach(b => b.classList.toggle('sel', b.dataset.mode === 'ver'));
   document.getElementById('heatmapPage').style.display = 'none';
   document.getElementById('inputPage').style.display = 'block';
   fileInput.value = '';
+});
+
+// --- ver / month 切り替え ---
+document.querySelectorAll('#viewToggle .toggleBtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.mode === viewMode) return;
+    viewMode = btn.dataset.mode;
+    document.querySelectorAll('#viewToggle .toggleBtn').forEach(b => b.classList.toggle('sel', b === btn));
+    if (currentData) render(currentData);
+  });
 });
 
 // --- カラーテーマ ---
@@ -372,7 +442,6 @@ function applyTheme(name) {
   try { localStorage.setItem(THEME_KEY, name); } catch (e) {}
   if (currentData) render(currentData);
 }
-
 const swHolder = document.getElementById('swatches');
 Object.keys(THEMES).forEach(n => {
   const s = document.createElement('span');
@@ -383,7 +452,6 @@ Object.keys(THEMES).forEach(n => {
   s.addEventListener('click', () => applyTheme(n));
   swHolder.appendChild(s);
 });
-
 let savedTheme = 'blue';
 try { savedTheme = localStorage.getItem(THEME_KEY) || 'blue'; } catch (e) {}
 applyTheme(savedTheme);
