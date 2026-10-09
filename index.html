@@ -47,6 +47,17 @@ button.go { width: 100%; margin-top: 12px; padding: 10px; border: none; border-r
 button.go:hover { filter: brightness(.88); }
 .err { color: #c0574f; font-size: 11.5px; margin-top: 8px; display: none; }
 
+/* ---- bookmarklet ---- */
+.bmBox { margin-top: 4px; }
+.bmRow { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+a.bm { flex: 1; display: block; padding: 9px 10px; border: 1.5px dashed var(--c3); border-radius: 8px;
+  color: var(--c4); font-size: 12.5px; font-weight: 700; letter-spacing: .06em; text-align: center;
+  text-decoration: none; cursor: grab; background: color-mix(in srgb, var(--c1) 18%, #fff); }
+button.copy { padding: 9px 12px; border: 1px solid #e3e8ee; border-radius: 8px; background: #fff;
+  color: var(--c3); font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+button.copy:hover { border-color: var(--c2); }
+.bmWarn { font-size: 11.5px; color: #c0574f; margin-top: 6px; display: none; }
+
 /* ---- page 2: heatmap ---- */
 #heatmapPage { display: none; width: 100%; }
 #heatmapPage .card { display: block; width: 100%; box-sizing: border-box; }
@@ -116,6 +127,17 @@ button.go:hover { filter: brightness(.88); }
     <textarea id="pasteArea" placeholder="プレー日,鍵盤,スクラッチ&#10;2026/07/05,60568,3427&#10;…をそのまま貼り付け"></textarea>
     <button class="go" id="goBtn">ヒートマップを表示</button>
     <div class="err" id="errMsg"></div>
+
+    <div class="or">BOOKMARKLET</div>
+    <div class="bmBox">
+      <div class="note">下のボタンをブックマークバーにドラッグして登録し、<a href="https://p.eagate.573.jp/game/2dx/34/djdata/score_download.html" target="_blank" rel="noopener">CSVダウンロード画面</a>（ログイン済み）でブックマークを押すと、打鍵データを自動で取得してヒートマップを表示します。</div>
+      <div class="note">スマホの場合は「コードをコピー」して、適当なページのブックマークを作成し、URL欄をコピーした内容に書き換えてください。</div>
+      <div class="bmRow">
+        <a class="bm" id="bmLink" href="#" title="ブックマークバーにドラッグ">KEYS HEATMAP連携</a>
+        <button class="copy" id="bmCopy" type="button">コードをコピー</button>
+      </div>
+      <div class="bmWarn" id="bmWarn">このページがローカルファイルとして開かれています。ブックマークレットを使うには、このページを https のURLで公開（GitHub Pages など）し、公開先のページからブックマークレットを登録してください。</div>
+    </div>
   </div>
 </div>
 
@@ -466,11 +488,113 @@ let savedTheme = 'blue';
 try { savedTheme = localStorage.getItem(THEME_KEY) || 'blue'; } catch (e) {}
 applyTheme(savedTheme);
 
-// --- 起動時: 保存済みデータがあればヒートマップを直接表示 ---
-try {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) load(saved, false);
-} catch (e) {}
+// --- ブックマークレット本体（e-amusement GATE上で実行される） ---
+// ※ ブックマークのURLは改行が除去されることがあるため、この関数内では // コメントを使わず、文末に ; を付ける
+function keysHeatmapBookmarklet(APP) {
+  var ROW = /^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})\s*[,\t]\s*(\d+)/;
+  function extract(text) {
+    var out = [];
+    String(text || '').split(/\r?\n/).forEach(function (l) {
+      var m = l.trim().match(ROW);
+      if (m) out.push(m[1] + '/' + m[2] + '/' + m[3] + ',' + m[4]);
+    });
+    return out;
+  }
+  function fromDoc(doc) {
+    var els = doc.querySelectorAll('textarea, pre');
+    for (var i = 0; i < els.length; i++) {
+      var r = extract(els[i].value || els[i].textContent);
+      if (r.length) return r;
+    }
+    if (!doc.body) return [];
+    var t = doc.body.innerHTML
+      .replace(/<\/t[dh]>/gi, ',')
+      .replace(/<br\s*\/?>|<\/(tr|p|div|li)>/gi, '\n')
+      .replace(/<[^>]+>/g, '');
+    return extract(t.split('\n').map(function (l) { return l.replace(/,\s*$/, ''); }).join('\n'));
+  }
+  if (!/(^|\.)eagate\.573\.jp$/.test(location.hostname)) {
+    alert('KEYS HEATMAP: e-amusement GATE（beatmania IIDX）のCSVダウンロード画面で実行してください。');
+    return;
+  }
+  var w = window.open('', '_blank');
+  if (w) { try { w.document.write('<p style="font-family:sans-serif;color:#555">KEYS HEATMAP: 打鍵データを取得中…</p>'); } catch (e) {} }
+  function done(lines) {
+    var url = APP + '#csv=' + encodeURIComponent(lines.join('\n'));
+    if (w && !w.closed) w.location.href = url; else location.href = url;
+  }
+  function fail(msg) {
+    if (w) w.close();
+    alert('KEYS HEATMAP: ' + msg);
+  }
+  var cur = fromDoc(document);
+  if (cur.length) { done(cur); return; }
+  var v = location.pathname.match(/\/game\/2dx\/(\d+)\//);
+  if (!v) { fail('beatmania IIDXのCSVダウンロード画面で実行してください。'); return; }
+  fetch('/game/2dx/' + v[1] + '/djdata/score_download.html', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'style=tower'
+  }).then(function (r) {
+    var cs = ((r.headers.get('content-type') || '').match(/charset=([\w-]+)/i) || [])[1] || 'utf-8';
+    return r.arrayBuffer().then(function (b) {
+      try { return new TextDecoder(cs).decode(b); } catch (e) { return new TextDecoder().decode(b); }
+    });
+  }).then(function (html) {
+    var lines = fromDoc(new DOMParser().parseFromString(html, 'text/html'));
+    if (!lines.length) { fail('打鍵データを取得できませんでした。ログイン状態を確認し、「IIDXタワーCSVダウンロード」の「表示する」を押してから再度お試しください。'); return; }
+    done(lines);
+  }).catch(function (e) { fail('通信に失敗しました（' + e.message + '）'); });
+}
+
+function bookmarkletURL() {
+  const app = location.origin + location.pathname;
+  const src = `(${keysHeatmapBookmarklet.toString()})(${JSON.stringify(app)})`.replace(/\s*\n\s*/g, ' ');
+  return 'javascript:' + encodeURIComponent(src);
+}
+
+(function setupBookmarklet() {
+  const link = document.getElementById('bmLink');
+  const copyBtn = document.getElementById('bmCopy');
+  if (!/^https?:$/.test(location.protocol)) {
+    document.getElementById('bmWarn').style.display = 'block';
+    link.style.opacity = .4; link.style.pointerEvents = 'none';
+    copyBtn.disabled = true; copyBtn.style.opacity = .4;
+    return;
+  }
+  const url = bookmarkletURL();
+  link.href = url;
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    alert('このボタンはブックマークバーにドラッグして登録してください。');
+  });
+  copyBtn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(url); }
+    catch (e) { prompt('以下をコピーしてください', url); return; }
+    copyBtn.textContent = 'コピーしました';
+    setTimeout(() => copyBtn.textContent = 'コードをコピー', 1500);
+  });
+})();
+
+// --- ブックマークレットから #csv=... で渡されたデータを読み込む ---
+function loadFromHash() {
+  const m = location.hash.match(/^#csv=(.*)$/s);
+  if (!m) return false;
+  let text = '';
+  try { text = decodeURIComponent(m[1]); } catch (e) { return false; }
+  history.replaceState(null, '', location.pathname + location.search); // URLからデータを消す
+  load(text);
+  return true;
+}
+window.addEventListener('hashchange', loadFromHash);
+
+// --- 起動時: 連携データ → 保存済みデータの順にヒートマップを直接表示 ---
+if (!loadFromHash()) {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) load(saved, false);
+  } catch (e) {}
+}
 </script>
 </body>
 </html>
